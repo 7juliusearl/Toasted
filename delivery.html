@@ -56,7 +56,7 @@
       <section class="delivery-video-section">
         <div class="container">
           <div class="delivery-video-wrapper">
-            <video class="delivery-video" id="delivery-video" controls playsinline preload="metadata">
+            <video class="delivery-video" id="delivery-video" controls playsinline preload="auto">
               <source id="delivery-video-src" src="" type="video/mp4">
               Your browser does not support the video tag.
             </video>
@@ -115,21 +115,29 @@
       }
 
       /**
-       * Convert a Dropbox share link to a direct download/stream link.
-       * Changes dl=0 to dl=1, or appends dl=1 if missing.
+       * Convert a Dropbox share link to a streamable raw URL.
+       * Uses raw=1 which serves the file directly and supports
+       * progressive/streaming playback (much faster on mobile).
        */
-      function toDropboxDirect(url) {
+      function toDropboxStream(url) {
         if (!url) return '';
-        let directUrl = url.replace(/dl=0/, 'dl=1');
-        if (!directUrl.includes('dl=1')) {
-          directUrl += (directUrl.includes('?') ? '&' : '?') + 'dl=1';
+        let streamUrl = url.replace(/dl=[01]/, 'raw=1');
+        if (!streamUrl.includes('raw=1')) {
+          streamUrl += (streamUrl.includes('?') ? '&' : '?') + 'raw=1';
         }
-        return directUrl;
+        return streamUrl;
       }
 
+      /**
+       * Convert a Dropbox share link to a direct download link.
+       */
       function toDropboxDownload(url) {
         if (!url) return '';
-        return url.replace(/dl=0/, 'dl=1').replace(/dl=1/, 'dl=1');
+        let dlUrl = url.replace(/dl=0/, 'dl=1');
+        if (!dlUrl.includes('dl=1')) {
+          dlUrl += (dlUrl.includes('?') ? '&' : '?') + 'dl=1';
+        }
+        return dlUrl;
       }
 
       try {
@@ -168,9 +176,9 @@
           document.getElementById('delivery-message').style.display = 'none';
         }
 
-        // Video source
-        const directUrl = toDropboxDirect(data.dropboxUrl);
-        document.getElementById('delivery-video-src').src = directUrl;
+        // Video source (use raw=1 for streaming playback)
+        const streamUrl = toDropboxStream(data.dropboxUrl);
+        document.getElementById('delivery-video-src').src = streamUrl;
         document.getElementById('delivery-video').load();
 
         // Download button
