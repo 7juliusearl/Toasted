@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your Toasted Video Guestbook delivery — watch and download your highlight reel.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Your Video is Ready — TOASTED</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Simplified Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-logo">
+        <img src="images/logo.png" alt="TOASTED" style="height: 40px;">
+      </a>
+    </div>
+  </nav>
+
+  <!-- Delivery Content -->
+  <main class="delivery-page" id="delivery-page">
+
+    <!-- Loading State -->
+    <div class="delivery-loading" id="delivery-loading">
+      <div class="delivery-spinner"></div>
+      <p>Loading your video...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="delivery-error" id="delivery-error" style="display: none;">
+      <div class="container text-center">
+        <div class="delivery-error-icon">🎬</div>
+        <h2>Link Not Found</h2>
+        <p class="text-large">This delivery link appears to be invalid or has expired.</p>
+        <a href="index.html" class="btn btn-primary" style="margin-top: var(--space-lg);">Visit Toasted</a>
+      </div>
+    </div>
+
+    <!-- Delivery Content (populated by JS) -->
+    <div class="delivery-content" id="delivery-content" style="display: none;">
+
+      <!-- Hero -->
+      <section class="delivery-hero">
+        <div class="container text-center">
+          <p class="delivery-event-meta" id="delivery-meta"></p>
+          <h1 class="delivery-title" id="delivery-title"></h1>
+          <p class="delivery-message" id="delivery-message"></p>
+        </div>
+      </section>
+
+      <!-- Video Player -->
+      <section class="delivery-video-section">
+        <div class="container">
+          <div class="delivery-video-wrapper">
+            <video class="delivery-video" id="delivery-video" controls playsinline preload="metadata">
+              <source id="delivery-video-src" src="" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+
+          <div class="delivery-download">
+            <a id="delivery-download-btn" href="#" class="btn btn-primary btn-large delivery-download-btn" target="_blank" rel="noopener noreferrer">
+              ⬇ Download Your Video
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Thank You -->
+      <section class="delivery-footer-section">
+        <div class="container text-center">
+          <p class="delivery-thanks">Thank you for choosing <strong>Toasted</strong> — we hope you love reliving these moments! 🥂</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">TOASTED</div>
+        <p class="footer-text">The Video Guestbook Your Wedding Guests Will Actually Love</p>
+        <p class="footer-text" style="margin-top: var(--space-lg); font-size: var(--font-size-sm); color: var(--color-light-gray);">
+          © 2026 Toasted VGB. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ============================================
+    // DELIVERY PAGE - Decode URL data & render
+    // ============================================
+    (function () {
+      const loadingEl = document.getElementById('delivery-loading');
+      const errorEl = document.getElementById('delivery-error');
+      const contentEl = document.getElementById('delivery-content');
+
+      function showError() {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        contentEl.style.display = 'none';
+      }
+
+      function showContent() {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        contentEl.style.display = 'block';
+      }
+
+      /**
+       * Convert a Dropbox share link to a direct download/stream link.
+       * Changes dl=0 to dl=1, or appends dl=1 if missing.
+       */
+      function toDropboxDirect(url) {
+        if (!url) return '';
+        let directUrl = url.replace(/dl=0/, 'dl=1');
+        if (!directUrl.includes('dl=1')) {
+          directUrl += (directUrl.includes('?') ? '&' : '?') + 'dl=1';
+        }
+        return directUrl;
+      }
+
+      function toDropboxDownload(url) {
+        if (!url) return '';
+        return url.replace(/dl=0/, 'dl=1').replace(/dl=1/, 'dl=1');
+      }
+
+      try {
+        // Read data from URL hash
+        const hash = window.location.hash.substring(1);
+        if (!hash) {
+          showError();
+          return;
+        }
+
+        const decoded = atob(hash);
+        const data = JSON.parse(decoded);
+
+        if (!data.clientNames || !data.dropboxUrl) {
+          showError();
+          return;
+        }
+
+        // Populate the page
+        document.title = `${data.clientNames} — Your Video is Ready | TOASTED`;
+
+        // Meta line (event type + date)
+        const metaParts = [];
+        if (data.eventType) metaParts.push(data.eventType);
+        if (data.eventDate) metaParts.push(data.eventDate);
+        document.getElementById('delivery-meta').textContent = metaParts.join(' • ');
+
+        // Title
+        document.getElementById('delivery-title').textContent =
+          `${data.clientNames}, your video is ready!`;
+
+        // Message
+        if (data.message) {
+          document.getElementById('delivery-message').textContent = data.message;
+        } else {
+          document.getElementById('delivery-message').style.display = 'none';
+        }
+
+        // Video source
+        const directUrl = toDropboxDirect(data.dropboxUrl);
+        document.getElementById('delivery-video-src').src = directUrl;
+        document.getElementById('delivery-video').load();
+
+        // Download button
+        document.getElementById('delivery-download-btn').href = toDropboxDownload(data.dropboxUrl);
+
+        showContent();
+
+      } catch (e) {
+        console.error('Failed to decode delivery data:', e);
+        showError();
+      }
+    })();
+
+    // Navbar scroll effect (reuse from main site)
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.pageYOffset > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Delivery Manager — TOASTED Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Auth Gate -->
+  <div class="admin-auth" id="auth-gate">
+    <div class="admin-auth-card">
+      <img src="images/logo.png" alt="TOASTED" style="height: 40px; margin: 0 auto var(--space-lg);">
+      <h2 style="font-size: var(--font-size-2xl);">Delivery Manager</h2>
+      <p class="card-text" style="margin-bottom: var(--space-xl);">Enter admin password to continue.</p>
+      <div class="admin-field">
+        <input type="password" id="auth-password" class="admin-input" placeholder="Password" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="auth-submit" style="width: 100%; margin-top: var(--space-md);">Enter</button>
+      <p class="admin-auth-error" id="auth-error" style="display: none;">Incorrect password. Try again.</p>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (hidden until auth) -->
+  <div class="admin-dashboard" id="admin-dashboard" style="display: none;">
+
+    <!-- Nav -->
+    <nav class="navbar" id="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-logo">
+          <img src="images/logo.png" alt="TOASTED" style="height: 40px;">
+        </a>
+        <span class="admin-badge">ADMIN</span>
+      </div>
+    </nav>
+
+    <div class="admin-container">
+
+      <!-- Create Delivery -->
+      <section class="admin-section">
+        <h1 class="admin-heading">New Delivery</h1>
+        <p class="card-text">Fill in the details below to generate a shareable delivery link for your client.</p>
+
+        <form class="admin-form" id="delivery-form">
+          <div class="admin-form-grid">
+            <div class="admin-field">
+              <label class="admin-label" for="clientNames">Client Name(s) *</label>
+              <input type="text" id="clientNames" class="admin-input" placeholder="e.g. Blake & Connor" required>
+            </div>
+
+            <div class="admin-field">
+              <label class="admin-label" for="eventType">Event Type</label>
+              <select id="eventType" class="admin-input">
+                <option value="Wedding">Wedding</option>
+                <option value="Birthday">Birthday</option>
+                <option value="Anniversary">Anniversary</option>
+                <option value="Corporate Event">Corporate Event</option>
+                <option value="Graduation">Graduation</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="admin-field">
+              <label class="admin-label" for="eventDate">Event Date</label>
+              <input type="date" id="eventDate" class="admin-input">
+            </div>
+
+            <div class="admin-field">
+              <label class="admin-label" for="dropboxUrl">Dropbox Video URL *</label>
+              <input type="url" id="dropboxUrl" class="admin-input" placeholder="https://www.dropbox.com/scl/fi/..." required>
+            </div>
+          </div>
+
+          <div class="admin-field" style="margin-top: var(--space-md);">
+            <label class="admin-label" for="message">Personal Message</label>
+            <textarea id="message" class="admin-input admin-textarea" rows="3"
+              placeholder="e.g. Thank you for having Toasted at your beautiful wedding! Here is your highlight reel — enjoy reliving these incredible moments!"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-large" style="margin-top: var(--space-lg); width: 100%;">
+            Generate Delivery Link
+          </button>
+        </form>
+
+        <!-- Generated Link Output -->
+        <div class="admin-link-output" id="link-output" style="display: none;">
+          <h3 style="font-size: var(--font-size-lg); color: var(--color-gold); margin-bottom: var(--space-sm);">
+            ✅ Link Generated!
+          </h3>
+          <div class="admin-link-box">
+            <input type="text" id="generated-link" class="admin-input" readonly>
+            <button type="button" class="btn btn-primary" id="copy-link-btn">Copy</button>
+          </div>
+          <div class="admin-link-actions">
+            <a id="preview-link" href="#" target="_blank" class="btn btn-secondary btn-small">Preview</a>
+            <button type="button" class="btn btn-secondary btn-small" id="new-delivery-btn">+ New Delivery</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Delivery History -->
+      <section class="admin-section">
+        <div class="admin-history-header">
+          <h2 class="admin-heading" style="margin-bottom: 0;">Delivery History</h2>
+          <span class="admin-history-count" id="history-count">0</span>
+        </div>
+        <div class="admin-history-list" id="history-list">
+          <p class="admin-empty" id="history-empty">No deliveries yet. Create your first one above!</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // ADMIN - Authentication
+    // ============================================
+    const ADMIN_PASS = 'toasted2026';
+    const AUTH_KEY = 'toasted_admin_auth';
+    const HISTORY_KEY = 'toasted_deliveries';
+
+    const authGate = document.getElementById('auth-gate');
+    const dashboard = document.getElementById('admin-dashboard');
+    const authPassword = document.getElementById('auth-password');
+    const authSubmit = document.getElementById('auth-submit');
+    const authError = document.getElementById('auth-error');
+
+    function authenticate() {
+      if (authPassword.value === ADMIN_PASS) {
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        authGate.style.display = 'none';
+        dashboard.style.display = 'block';
+        loadHistory();
+      } else {
+        authError.style.display = 'block';
+        authPassword.value = '';
+        authPassword.focus();
+      }
+    }
+
+    // Check session
+    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+      authGate.style.display = 'none';
+      dashboard.style.display = 'block';
+    }
+
+    authSubmit.addEventListener('click', authenticate);
+    authPassword.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') authenticate();
+    });
+
+    // ============================================
+    // ADMIN - Generate Delivery Link
+    // ============================================
+    const form = document.getElementById('delivery-form');
+    const linkOutput = document.getElementById('link-output');
+    const generatedLink = document.getElementById('generated-link');
+    const copyBtn = document.getElementById('copy-link-btn');
+    const previewLink = document.getElementById('preview-link');
+    const newDeliveryBtn = document.getElementById('new-delivery-btn');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const data = {
+        clientNames: document.getElementById('clientNames').value.trim(),
+        eventType: document.getElementById('eventType').value,
+        eventDate: formatDate(document.getElementById('eventDate').value),
+        dropboxUrl: document.getElementById('dropboxUrl').value.trim(),
+        message: document.getElementById('message').value.trim()
+      };
+
+      if (!data.clientNames || !data.dropboxUrl) return;
+
+      // Encode data as base64 in URL hash
+      const encoded = btoa(JSON.stringify(data));
+      const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'delivery.html');
+      const deliveryUrl = `${baseUrl}#${encoded}`;
+
+      // Show generated link
+      generatedLink.value = deliveryUrl;
+      previewLink.href = deliveryUrl;
+      linkOutput.style.display = 'block';
+      form.style.display = 'none';
+
+      // Save to history
+      saveToHistory(data, deliveryUrl);
+      loadHistory();
+    });
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    // Copy link
+    copyBtn.addEventListener('click', () => {
+      generatedLink.select();
+      navigator.clipboard.writeText(generatedLink.value).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+      });
+    });
+
+    // New delivery
+    newDeliveryBtn.addEventListener('click', () => {
+      form.reset();
+      form.style.display = 'block';
+      linkOutput.style.display = 'none';
+    });
+
+    // ============================================
+    // ADMIN - Delivery History (localStorage)
+    // ============================================
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      } catch { return []; }
+    }
+
+    function saveToHistory(data, url) {
+      const history = getHistory();
+      history.unshift({
+        ...data,
+        url,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function deleteFromHistory(index) {
+      const history = getHistory();
+      history.splice(index, 1);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      loadHistory();
+    }
+
+    function loadHistory() {
+      const history = getHistory();
+      const listEl = document.getElementById('history-list');
+      const emptyEl = document.getElementById('history-empty');
+      const countEl = document.getElementById('history-count');
+
+      countEl.textContent = history.length;
+
+      if (history.length === 0) {
+        emptyEl.style.display = 'block';
+        listEl.querySelectorAll('.admin-history-item').forEach(el => el.remove());
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+
+      // Clear existing items
+      listEl.querySelectorAll('.admin-history-item').forEach(el => el.remove());
+
+      history.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'admin-history-item';
+
+        const createdDate = new Date(item.createdAt).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric'
+        });
+
+        div.innerHTML = `
+          <div class="admin-history-info">
+            <span class="admin-history-name">${escapeHtml(item.clientNames)}</span>
+            <span class="admin-history-meta">
+              ${escapeHtml(item.eventType || '')}${item.eventDate ? ' • ' + escapeHtml(item.eventDate) : ''}
+            </span>
+            <span class="admin-history-date">Created ${createdDate}</span>
+          </div>
+          <div class="admin-history-actions">
+            <button class="btn btn-small btn-primary admin-copy-btn" data-url="${escapeAttr(item.url)}">Copy Link</button>
+            <a href="${escapeAttr(item.url)}" target="_blank" class="btn btn-small btn-secondary">Preview</a>
+            <button class="btn btn-small admin-delete-btn" data-index="${index}">✕</button>
+          </div>
+        `;
+
+        listEl.appendChild(div);
+      });
+
+      // Attach copy handlers
+      listEl.querySelectorAll('.admin-copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.url).then(() => {
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+          });
+        });
+      });
+
+      // Attach delete handlers
+      listEl.querySelectorAll('.admin-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm('Remove this delivery from history?')) {
+            deleteFromHistory(parseInt(btn.dataset.index));
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Load history on page load (if already authed)
+    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+      loadHistory();
+    }
+  </script>
+
+</body>
+
+</html>
