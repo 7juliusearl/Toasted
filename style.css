@@ -1469,6 +1469,17 @@ p {
   text-align: center;
 }
 
+/* Admin Button Sizing */
+.admin-dashboard .btn-large {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--font-size-sm);
+}
+
+.admin-dashboard .btn-small {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-xs);
+}
+
 /* Admin Responsive */
 @media (max-width: 768px) {
   .admin-form-grid {
