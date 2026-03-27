@@ -194,7 +194,9 @@
       // Compress data for shorter URL
       const compact = { c: data.clientNames, t: data.eventType, d: data.eventDate, u: data.dropboxUrl, m: data.message };
       const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(compact));
-      const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'delivery.html');
+      const path = window.location.pathname;
+      const deliveryPath = path.endsWith('admin.html') ? path.replace('admin.html', 'delivery.html') : path.replace(/\/admin\/?$/, '/delivery');
+      const baseUrl = window.location.origin + deliveryPath;
       const deliveryUrl = `${baseUrl}#${compressed}`;
 
       // Show generated link
