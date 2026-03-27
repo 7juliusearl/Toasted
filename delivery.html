@@ -8,6 +8,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Your Video is Ready — TOASTED</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </head>
 
 <body>
@@ -148,8 +149,18 @@
           return;
         }
 
-        const decoded = atob(hash);
-        const data = JSON.parse(decoded);
+        // Try LZ-String decompression first, fall back to base64 for old links
+        let data;
+        const decompressed = LZString.decompressFromEncodedURIComponent(hash);
+        if (decompressed) {
+          const raw = JSON.parse(decompressed);
+          // Map short keys back to full keys
+          data = raw.c ? { clientNames: raw.c, eventType: raw.t, eventDate: raw.d, dropboxUrl: raw.u, message: raw.m } : raw;
+        } else {
+          // Backward compatibility: old base64-encoded links
+          const decoded = atob(hash);
+          data = JSON.parse(decoded);
+        }
 
         if (!data.clientNames || !data.dropboxUrl) {
           showError();

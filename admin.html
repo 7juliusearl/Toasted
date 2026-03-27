@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Delivery Manager — TOASTED Admin</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </head>
 
 <body>
@@ -190,10 +191,11 @@
 
       if (!data.clientNames || !data.dropboxUrl) return;
 
-      // Encode data as base64 in URL hash
-      const encoded = btoa(JSON.stringify(data));
+      // Compress data for shorter URL
+      const compact = { c: data.clientNames, t: data.eventType, d: data.eventDate, u: data.dropboxUrl, m: data.message };
+      const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(compact));
       const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'delivery.html');
-      const deliveryUrl = `${baseUrl}#${encoded}`;
+      const deliveryUrl = `${baseUrl}#${compressed}`;
 
       // Show generated link
       generatedLink.value = deliveryUrl;
