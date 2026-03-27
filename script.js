@@ -230,8 +230,86 @@ window.addEventListener('load', () => {
 });
 
 // ============================================
+// FAQ ACCORDION
+// ============================================
+const faqItems = document.querySelectorAll('.faq-item');
+
+faqItems.forEach(item => {
+  const question = item.querySelector('.faq-question');
+  
+  question.addEventListener('click', () => {
+    const isActive = item.classList.contains('active');
+    
+    // Close all other FAQ items
+    faqItems.forEach(otherItem => {
+      otherItem.classList.remove('active');
+    });
+    
+    // Toggle current item
+    if (!isActive) {
+      item.classList.add('active');
+    }
+  });
+});
+
+// ============================================
+// VIDEO PLAYBACK
+// ============================================
+const videoCards = document.querySelectorAll('.video-card');
+
+videoCards.forEach(card => {
+  const video = card.querySelector('.sample-video');
+  const playBtn = card.querySelector('.video-play-btn');
+  
+  function toggleVideo() {
+    if (video.paused) {
+      // Pause all other videos first
+      videoCards.forEach(otherCard => {
+        const otherVideo = otherCard.querySelector('.sample-video');
+        if (otherVideo !== video && !otherVideo.paused) {
+          otherVideo.pause();
+          otherCard.classList.remove('playing');
+        }
+      });
+      
+      video.muted = false;
+      video.play();
+      card.classList.add('playing');
+    } else {
+      video.pause();
+      card.classList.remove('playing');
+    }
+  }
+  
+  playBtn.addEventListener('click', toggleVideo);
+  card.addEventListener('click', (e) => {
+    if (e.target === video) {
+      toggleVideo();
+    }
+  });
+  
+  video.addEventListener('ended', () => {
+    card.classList.remove('playing');
+  });
+});
+
+// ============================================
+// EMBEDDED FORM RESIZE
+// ============================================
+window.addEventListener('message', function(e) {
+  if (e.origin !== 'https://dayoftimeline.app') return;
+  try {
+    var data = JSON.parse(e.data);
+    if (data.type === 'resize-form' && data.height && data.formId === 'WNUxZMhmCE67BTxAqpH3') {
+      document.getElementById('capture-form-WNUxZMhmCE67BTxAqpH3').style.height = data.height + 'px';
+    }
+  } catch(err) {}
+});
+
+// ============================================
 // CONSOLE EASTER EGG
 // ============================================
 console.log('%cTOASTED VGB 🎥', 'color: #FFD700; font-size: 24px; font-weight: bold;');
 console.log('%cThe Video Guestbook Your Wedding Guests Will Actually Love!', 'color: #FFF; font-size: 14px;');
 console.log('%cBuilt with ❤️ for unforgettable memories', 'color: #FFD700; font-size: 12px;');
+
