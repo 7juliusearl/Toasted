@@ -42,8 +42,14 @@
 
       <!-- Create Delivery -->
       <section class="admin-section">
-        <h1 class="admin-heading">New Delivery</h1>
-        <p class="card-text">Fill in the details below to generate a shareable delivery link for your client.</p>
+        <h1 class="admin-heading" id="form-heading">New Delivery</h1>
+        <p class="card-text" id="form-description">Fill in the details below to generate a shareable delivery link for your client.</p>
+
+        <!-- Edit Mode Banner -->
+        <div class="admin-edit-banner" id="edit-banner" style="display: none;">
+          <span>✏️ Editing delivery for <strong id="edit-banner-name"></strong></span>
+          <button type="button" class="btn btn-small btn-secondary" id="cancel-edit-btn">Cancel Edit</button>
+        </div>
 
         <form class="admin-form" id="delivery-form">
           <div class="admin-form-grid">
@@ -81,7 +87,7 @@
               placeholder="e.g. Thank you for having Toasted at your beautiful wedding! Here is your highlight reel — enjoy reliving these incredible moments!"></textarea>
           </div>
 
-          <button type="submit" class="btn btn-primary btn-large" style="margin-top: var(--space-lg); width: 100%;">
+          <button type="submit" class="btn btn-primary btn-large" id="form-submit-btn" style="margin-top: var(--space-lg); width: 100%;">
             Generate Delivery Link
           </button>
         </form>
@@ -123,6 +129,7 @@
     const ADMIN_PASS = 'toasted2026';
     const AUTH_KEY = 'toasted_admin_auth';
     const HISTORY_KEY = 'toasted_deliveries';
+    let editingIndex = null; // Track which history entry we're editing
 
     const authGate = document.getElementById('auth-gate');
     const dashboard = document.getElementById('admin-dashboard');
@@ -163,6 +170,12 @@
     const copyBtn = document.getElementById('copy-link-btn');
     const previewLink = document.getElementById('preview-link');
     const newDeliveryBtn = document.getElementById('new-delivery-btn');
+    const formHeading = document.getElementById('form-heading');
+    const formDescription = document.getElementById('form-description');
+    const formSubmitBtn = document.getElementById('form-submit-btn');
+    const editBanner = document.getElementById('edit-banner');
+    const editBannerName = document.getElementById('edit-banner-name');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -188,8 +201,13 @@
       linkOutput.style.display = 'block';
       form.style.display = 'none';
 
-      // Save to history
-      saveToHistory(data, deliveryUrl);
+      // Save or update history
+      if (editingIndex !== null) {
+        updateHistory(editingIndex, data, deliveryUrl);
+        exitEditMode();
+      } else {
+        saveToHistory(data, deliveryUrl);
+      }
       loadHistory();
     });
 
@@ -197,6 +215,14 @@
       if (!dateStr) return '';
       const d = new Date(dateStr + 'T00:00:00');
       return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    // Parse a formatted date string back to YYYY-MM-DD for the date input
+    function parseDateToInput(formattedDate) {
+      if (!formattedDate) return '';
+      const d = new Date(formattedDate);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
     }
 
     // Copy link
@@ -210,10 +236,56 @@
 
     // New delivery
     newDeliveryBtn.addEventListener('click', () => {
+      exitEditMode();
       form.reset();
       form.style.display = 'block';
       linkOutput.style.display = 'none';
     });
+
+    // Cancel edit
+    cancelEditBtn.addEventListener('click', () => {
+      exitEditMode();
+      form.reset();
+    });
+
+    // Enter edit mode: pre-fill form with existing delivery data
+    function enterEditMode(index) {
+      const history = getHistory();
+      const item = history[index];
+      if (!item) return;
+
+      editingIndex = index;
+
+      // Pre-fill form fields
+      document.getElementById('clientNames').value = item.clientNames || '';
+      document.getElementById('eventType').value = item.eventType || 'Wedding';
+      document.getElementById('eventDate').value = parseDateToInput(item.eventDate);
+      document.getElementById('dropboxUrl').value = item.dropboxUrl || '';
+      document.getElementById('message').value = item.message || '';
+
+      // Update UI to show edit mode
+      formHeading.textContent = 'Edit Delivery';
+      formDescription.textContent = 'Update the details below. A new delivery link will be generated with your changes.';
+      formSubmitBtn.textContent = 'Update Delivery Link';
+      editBannerName.textContent = item.clientNames;
+      editBanner.style.display = 'flex';
+
+      // Make sure form is visible
+      form.style.display = 'block';
+      linkOutput.style.display = 'none';
+
+      // Scroll to form
+      formHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Exit edit mode: reset form UI back to "New Delivery"
+    function exitEditMode() {
+      editingIndex = null;
+      formHeading.textContent = 'New Delivery';
+      formDescription.textContent = 'Fill in the details below to generate a shareable delivery link for your client.';
+      formSubmitBtn.textContent = 'Generate Delivery Link';
+      editBanner.style.display = 'none';
+    }
 
     // ============================================
     // ADMIN - Delivery History (localStorage)
@@ -231,6 +303,18 @@
         url,
         createdAt: new Date().toISOString()
       });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function updateHistory(index, data, url) {
+      const history = getHistory();
+      if (index < 0 || index >= history.length) return;
+      history[index] = {
+        ...data,
+        url,
+        createdAt: history[index].createdAt, // Keep original creation date
+        updatedAt: new Date().toISOString()
+      };
       localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     }
 
@@ -277,6 +361,7 @@
             <span class="admin-history-date">Created ${createdDate}</span>
           </div>
           <div class="admin-history-actions">
+            <button class="btn btn-small btn-secondary admin-edit-btn" data-index="${index}">Edit</button>
             <button class="btn btn-small btn-primary admin-copy-btn" data-url="${escapeAttr(item.url)}">Copy Link</button>
             <a href="${escapeAttr(item.url)}" target="_blank" class="btn btn-small btn-secondary">Preview</a>
             <button class="btn btn-small admin-delete-btn" data-index="${index}">✕</button>
@@ -293,6 +378,13 @@
             btn.textContent = 'Copied!';
             setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
           });
+        });
+      });
+
+      // Attach edit handlers
+      listEl.querySelectorAll('.admin-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          enterEditMode(parseInt(btn.dataset.index));
         });
       });
 

@@ -1447,6 +1447,20 @@ p {
   color: #ff6b6b;
 }
 
+.admin-edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  color: var(--color-gold);
+  font-size: var(--font-size-sm);
+}
+
 .admin-empty {
   color: var(--color-off-white);
   opacity: 0.5;
