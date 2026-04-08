@@ -13,6 +13,17 @@
 
 <body>
 
+  <!-- Netlify Forms: Static form required for Netlify to detect at deploy time -->
+  <form name="addon-purchase" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+    <input name="bot-field" type="hidden">
+    <input name="buyer-name" type="text">
+    <input name="buyer-email" type="email">
+    <input name="product" type="text">
+    <input name="client-names" type="text">
+    <input name="event-type" type="text">
+    <input name="event-date" type="text">
+  </form>
+
   <!-- Simplified Navigation -->
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
@@ -71,6 +82,59 @@
         </div>
       </section>
 
+      <!-- Add-Ons Bump Section -->
+      <section class="delivery-addons-section">
+        <div class="container">
+          <div class="text-center">
+            <p class="addons-eyebrow">🎁 Just For You</p>
+            <h2 class="addons-title">Want to Keep the Memories Forever?</h2>
+            <p class="addons-subtitle">These exclusive add-ons are available to you as a Toasted client — take your memories to the next level.</p>
+          </div>
+          <div class="addons-grid">
+
+            <!-- Physical Video Book -->
+            <div class="addon-card">
+              <div class="addon-card-img-wrap">
+                <img src="images/VGB Book.png" alt="Physical Video Book" class="addon-card-img">
+                <span class="addon-badge">Most Popular</span>
+              </div>
+              <div class="addon-card-body">
+                <h3 class="addon-name">Physical Video Book</h3>
+                <p class="addon-desc">Hold your wedding memories in a book that plays video. A unique, tangible keepsake that brings your day back to life — anytime, anywhere.</p>
+                <!-- TODO: Update price below to match your Stripe product -->
+                <div class="addon-price">$199</div>
+                <button class="btn btn-primary btn-large addon-cta-btn"
+                  id="addon-btn-videobook"
+                  data-product="Physical Video Book"
+                  data-stripe="https://buy.stripe.com/00w5kD27c4cvgAg1hDfAc0o">
+                  Add to My Order &rarr;
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom USB Drive -->
+            <div class="addon-card">
+              <div class="addon-card-img-wrap">
+                <img src="images/usb.jpg" alt="Custom USB Drive" class="addon-card-img">
+              </div>
+              <div class="addon-card-body">
+                <h3 class="addon-name">Custom USB Drive</h3>
+                <p class="addon-desc">All your wedding videos and photos on a personalized USB drive. A stylish, convenient way to store and share your favorite memories forever.</p>
+                <!-- TODO: Update price below to match your Stripe product -->
+                <div class="addon-price">$79</div>
+                <button class="btn btn-primary btn-large addon-cta-btn"
+                  id="addon-btn-usb"
+                  data-product="Custom USB Drive"
+                  data-stripe="https://buy.stripe.com/14A00j7rwfVd97O9O9fAc0p">
+                  Add to My Order &rarr;
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <!-- Thank You -->
       <section class="delivery-footer-section">
         <div class="container text-center">
@@ -98,6 +162,10 @@
     // ============================================
     // DELIVERY PAGE - Decode URL data & render
     // ============================================
+
+    // Exposed at module scope so the add-on modal can reference client info
+    let _deliveryData = null;
+
     (function () {
       const loadingEl = document.getElementById('delivery-loading');
       const errorEl = document.getElementById('delivery-error');
@@ -115,11 +183,6 @@
         contentEl.style.display = 'block';
       }
 
-      /**
-       * Convert a Dropbox share link to a streamable raw URL.
-       * Uses raw=1 which serves the file directly and supports
-       * progressive/streaming playback (much faster on mobile).
-       */
       function toDropboxStream(url) {
         if (!url) return '';
         let streamUrl = url.replace(/dl=[01]/, 'raw=1');
@@ -129,9 +192,6 @@
         return streamUrl;
       }
 
-      /**
-       * Convert a Dropbox share link to a direct download link.
-       */
       function toDropboxDownload(url) {
         if (!url) return '';
         let dlUrl = url.replace(/dl=0/, 'dl=1');
@@ -142,57 +202,44 @@
       }
 
       try {
-        // Read data from URL hash
         const hash = window.location.hash.substring(1);
-        if (!hash) {
-          showError();
-          return;
-        }
+        if (!hash) { showError(); return; }
 
-        // Try LZ-String decompression first, fall back to base64 for old links
         let data;
         const decompressed = LZString.decompressFromEncodedURIComponent(hash);
         if (decompressed) {
           const raw = JSON.parse(decompressed);
-          // Map short keys back to full keys
           data = raw.c ? { clientNames: raw.c, eventType: raw.t, eventDate: raw.d, dropboxUrl: raw.u, message: raw.m } : raw;
         } else {
-          // Backward compatibility: old base64-encoded links
           const decoded = atob(hash);
           data = JSON.parse(decoded);
         }
 
-        if (!data.clientNames || !data.dropboxUrl) {
-          showError();
-          return;
-        }
+        if (!data.clientNames || !data.dropboxUrl) { showError(); return; }
 
-        // Populate the page
+        // Expose to add-on modal
+        _deliveryData = data;
+
         document.title = `${data.clientNames} — Your Video is Ready | TOASTED`;
 
-        // Meta line (event type + date)
         const metaParts = [];
         if (data.eventType) metaParts.push(data.eventType);
         if (data.eventDate) metaParts.push(data.eventDate);
         document.getElementById('delivery-meta').textContent = metaParts.join(' • ');
 
-        // Title
         document.getElementById('delivery-title').textContent =
           `${data.clientNames}, your video is ready!`;
 
-        // Message
         if (data.message) {
           document.getElementById('delivery-message').textContent = data.message;
         } else {
           document.getElementById('delivery-message').style.display = 'none';
         }
 
-        // Video source (use raw=1 for streaming playback)
         const streamUrl = toDropboxStream(data.dropboxUrl);
         document.getElementById('delivery-video-src').src = streamUrl;
         document.getElementById('delivery-video').load();
 
-        // Download button
         document.getElementById('delivery-download-btn').href = toDropboxDownload(data.dropboxUrl);
 
         showContent();
@@ -203,7 +250,7 @@
       }
     })();
 
-    // Navbar scroll effect (reuse from main site)
+    // Navbar scroll effect
     const navbar = document.getElementById('navbar');
     window.addEventListener('scroll', () => {
       if (window.pageYOffset > 50) {
@@ -212,7 +259,138 @@
         navbar.classList.remove('scrolled');
       }
     });
+
+    // ============================================
+    // ADD-ON BUMP PRODUCTS - Modal & Checkout
+    // ============================================
+    let _selectedProduct = null;
+    let _selectedStripeUrl = null;
+
+    const addonModalOverlay = document.getElementById('addon-modal-overlay');
+    const addonModalClose  = document.getElementById('addon-modal-close');
+    const addonModalForm   = document.getElementById('addon-modal-form');
+    const addonModalError  = document.getElementById('addon-modal-error');
+    const addonModalProduct = document.getElementById('addon-modal-product');
+    const addonModalSubmit = document.getElementById('addon-modal-submit');
+
+    // Open modal when an add-on button is clicked
+    document.querySelectorAll('.addon-cta-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _selectedProduct  = btn.dataset.product;
+        _selectedStripeUrl = btn.dataset.stripe;
+
+        addonModalProduct.textContent = 'Adding: ' + _selectedProduct;
+
+        // Pre-fill buyer name from delivery data (client can edit it)
+        if (_deliveryData && _deliveryData.clientNames) {
+          document.getElementById('modal-buyer-name').value = _deliveryData.clientNames;
+        }
+
+        openAddonModal();
+      });
+    });
+
+    function openAddonModal() {
+      addonModalOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('modal-buyer-email').focus(), 300);
+    }
+
+    function closeAddonModal() {
+      addonModalOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+      addonModalForm.reset();
+      addonModalError.style.display = 'none';
+      addonModalSubmit.textContent = 'Continue to Checkout →';
+      addonModalSubmit.disabled = false;
+      _selectedProduct  = null;
+      _selectedStripeUrl = null;
+    }
+
+    addonModalClose.addEventListener('click', closeAddonModal);
+    addonModalOverlay.addEventListener('click', (e) => {
+      if (e.target === addonModalOverlay) closeAddonModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && addonModalOverlay.classList.contains('active')) closeAddonModal();
+    });
+
+    addonModalForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name  = document.getElementById('modal-buyer-name').value.trim();
+      const email = document.getElementById('modal-buyer-email').value.trim();
+
+      if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        addonModalError.style.display = 'block';
+        return;
+      }
+
+      addonModalError.style.display = 'none';
+      addonModalSubmit.textContent = 'Redirecting to Checkout...';
+      addonModalSubmit.disabled = true;
+
+      // 1. Submit to Netlify Forms (fire-and-forget — never block the user)
+      try {
+        await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            'form-name':    'addon-purchase',
+            'buyer-name':   name,
+            'buyer-email':  email,
+            'product':      _selectedProduct || '',
+            'client-names': (_deliveryData && _deliveryData.clientNames) || '',
+            'event-type':   (_deliveryData && _deliveryData.eventType)   || '',
+            'event-date':   (_deliveryData && _deliveryData.eventDate)   || ''
+          }).toString()
+        });
+      } catch (err) {
+        // Non-blocking: log and continue to Stripe regardless
+        console.warn('Netlify Forms submission failed (proceeding to Stripe):', err);
+      }
+
+      // 2. Build Stripe URL with prefilled buyer info
+      try {
+        const stripeUrl = new URL(_selectedStripeUrl);
+        stripeUrl.searchParams.set('prefilled_email', email);
+        // client_reference_id shows in Stripe dashboard (max 200 chars)
+        stripeUrl.searchParams.set('client_reference_id', name.substring(0, 200));
+        window.location.href = stripeUrl.toString();
+      } catch (_) {
+        // Fallback if URL parsing fails
+        window.location.href = _selectedStripeUrl;
+      }
+    });
   </script>
+
+  <!-- Add-On Purchase Modal -->
+  <div class="addon-modal-overlay" id="addon-modal-overlay">
+    <div class="addon-modal" role="dialog" aria-modal="true" aria-labelledby="addon-modal-title">
+      <button class="addon-modal-close" id="addon-modal-close" aria-label="Close modal">&#x2715;</button>
+      <div class="addon-modal-header">
+        <p class="addons-eyebrow" style="margin-bottom: var(--space-xs);">Almost there! 🎉</p>
+        <h3 class="addon-modal-title" id="addon-modal-title">Just one quick step</h3>
+        <p class="addon-modal-subtitle">Enter your details and we'll take you straight to checkout.</p>
+      </div>
+      <div class="addon-modal-product" id="addon-modal-product"></div>
+      <form class="addon-modal-form" id="addon-modal-form" novalidate>
+        <div class="addon-modal-field">
+          <label class="admin-label" for="modal-buyer-name">Your Name *</label>
+          <input type="text" id="modal-buyer-name" class="admin-input" placeholder="e.g. Blake &amp; Connor" required autocomplete="name">
+        </div>
+        <div class="addon-modal-field">
+          <label class="admin-label" for="modal-buyer-email">Your Email *</label>
+          <input type="email" id="modal-buyer-email" class="admin-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <p class="addon-modal-privacy">&#x1F512; We use this to confirm your order — no spam, ever.</p>
+        <button type="submit" class="btn btn-primary btn-large" id="addon-modal-submit" style="width: 100%;">
+          Continue to Checkout &rarr;
+        </button>
+        <p class="addon-modal-error" id="addon-modal-error">Please enter both your name and a valid email.</p>
+      </form>
+    </div>
+  </div>
 
 </body>
 
