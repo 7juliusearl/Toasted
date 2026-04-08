@@ -16,8 +16,9 @@
   <!-- Netlify Forms: Static form required for Netlify to detect at deploy time -->
   <form name="addon-purchase" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
     <input name="bot-field" type="hidden">
+    <input name="subject" type="hidden" value="New Add-On Purchase — Toasted">
     <input name="buyer-name" type="text">
-    <input name="buyer-email" type="email">
+    <input name="email" type="email">
     <input name="product" type="text">
     <input name="client-names" type="text">
     <input name="event-type" type="text">
@@ -337,8 +338,9 @@
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             'form-name':    'addon-purchase',
+            'subject':      'New Add-On Purchase — Toasted',
             'buyer-name':   name,
-            'buyer-email':  email,
+            'email':        email,
             'product':      _selectedProduct || '',
             'client-names': (_deliveryData && _deliveryData.clientNames) || '',
             'event-type':   (_deliveryData && _deliveryData.eventType)   || '',
