@@ -103,7 +103,7 @@
                 <h3 class="addon-name">Physical Video Book</h3>
                 <p class="addon-desc">Hold your wedding memories in a book that plays video. A unique, tangible keepsake that brings your day back to life — anytime, anywhere.</p>
                 <div class="addon-price">$250</div>
-                <button class="btn btn-primary btn-large addon-cta-btn"
+                <button class="btn btn-primary btn-small addon-cta-btn"
                   id="addon-btn-videobook"
                   data-product="Physical Video Book"
                   data-stripe="https://buy.stripe.com/00w5kD27c4cvgAg1hDfAc0o">
@@ -121,7 +121,7 @@
                 <h3 class="addon-name">Custom USB Drive</h3>
                 <p class="addon-desc">All your wedding videos and photos on a personalized USB drive. A stylish, convenient way to store and share your favorite memories forever.</p>
                 <div class="addon-price">$99</div>
-                <button class="btn btn-primary btn-large addon-cta-btn"
+                <button class="btn btn-primary btn-small addon-cta-btn"
                   id="addon-btn-usb"
                   data-product="Custom USB Drive"
                   data-stripe="https://buy.stripe.com/14A00j7rwfVd97O9O9fAc0p">
@@ -156,6 +156,34 @@
       </div>
     </div>
   </footer>
+
+  <!-- Add-On Purchase Modal -->
+  <div class="addon-modal-overlay" id="addon-modal-overlay">
+    <div class="addon-modal" role="dialog" aria-modal="true" aria-labelledby="addon-modal-title">
+      <button class="addon-modal-close" id="addon-modal-close" aria-label="Close modal">&#x2715;</button>
+      <div class="addon-modal-header">
+        <p class="addons-eyebrow" style="margin-bottom: var(--space-xs);">Almost there! 🎉</p>
+        <h3 class="addon-modal-title" id="addon-modal-title">Just one quick step</h3>
+        <p class="addon-modal-subtitle">Enter your details and we'll take you straight to checkout.</p>
+      </div>
+      <div class="addon-modal-product" id="addon-modal-product"></div>
+      <form class="addon-modal-form" id="addon-modal-form" novalidate>
+        <div class="addon-modal-field">
+          <label class="admin-label" for="modal-buyer-name">Your Name *</label>
+          <input type="text" id="modal-buyer-name" class="admin-input" placeholder="e.g. Blake &amp; Connor" required autocomplete="name">
+        </div>
+        <div class="addon-modal-field">
+          <label class="admin-label" for="modal-buyer-email">Your Email *</label>
+          <input type="email" id="modal-buyer-email" class="admin-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <p class="addon-modal-privacy">&#x1F512; We use this to confirm your order — no spam, ever.</p>
+        <button type="submit" class="btn btn-primary btn-large" id="addon-modal-submit" style="width: 100%;">
+          Continue to Checkout &rarr;
+        </button>
+        <p class="addon-modal-error" id="addon-modal-error">Please enter both your name and a valid email.</p>
+      </form>
+    </div>
+  </div>
 
   <script>
     // ============================================
@@ -346,7 +374,6 @@
           }).toString()
         });
       } catch (err) {
-        // Non-blocking: log and continue to Stripe regardless
         console.warn('Netlify Forms submission failed (proceeding to Stripe):', err);
       }
 
@@ -354,43 +381,13 @@
       try {
         const stripeUrl = new URL(_selectedStripeUrl);
         stripeUrl.searchParams.set('prefilled_email', email);
-        // client_reference_id shows in Stripe dashboard (max 200 chars)
         stripeUrl.searchParams.set('client_reference_id', name.substring(0, 200));
         window.location.href = stripeUrl.toString();
       } catch (_) {
-        // Fallback if URL parsing fails
         window.location.href = _selectedStripeUrl;
       }
     });
   </script>
-
-  <!-- Add-On Purchase Modal -->
-  <div class="addon-modal-overlay" id="addon-modal-overlay">
-    <div class="addon-modal" role="dialog" aria-modal="true" aria-labelledby="addon-modal-title">
-      <button class="addon-modal-close" id="addon-modal-close" aria-label="Close modal">&#x2715;</button>
-      <div class="addon-modal-header">
-        <p class="addons-eyebrow" style="margin-bottom: var(--space-xs);">Almost there! 🎉</p>
-        <h3 class="addon-modal-title" id="addon-modal-title">Just one quick step</h3>
-        <p class="addon-modal-subtitle">Enter your details and we'll take you straight to checkout.</p>
-      </div>
-      <div class="addon-modal-product" id="addon-modal-product"></div>
-      <form class="addon-modal-form" id="addon-modal-form" novalidate>
-        <div class="addon-modal-field">
-          <label class="admin-label" for="modal-buyer-name">Your Name *</label>
-          <input type="text" id="modal-buyer-name" class="admin-input" placeholder="e.g. Blake &amp; Connor" required autocomplete="name">
-        </div>
-        <div class="addon-modal-field">
-          <label class="admin-label" for="modal-buyer-email">Your Email *</label>
-          <input type="email" id="modal-buyer-email" class="admin-input" placeholder="you@example.com" required autocomplete="email">
-        </div>
-        <p class="addon-modal-privacy">&#x1F512; We use this to confirm your order — no spam, ever.</p>
-        <button type="submit" class="btn btn-primary btn-large" id="addon-modal-submit" style="width: 100%;">
-          Continue to Checkout &rarr;
-        </button>
-        <p class="addon-modal-error" id="addon-modal-error">Please enter both your name and a valid email.</p>
-      </form>
-    </div>
-  </div>
 
 </body>
 
