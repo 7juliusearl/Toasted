@@ -173,8 +173,11 @@
       <!-- Selected product -->
       <div class="addon-modal-product" id="addon-modal-product"></div>
 
-      <!-- Recipient (who this is for) -->
-      <div class="addon-modal-recipient" id="addon-modal-recipient"></div>
+      <!-- For Me / Gift toggle -->
+      <div class="addon-purchase-type">
+        <button type="button" class="addon-type-btn active" data-type="self">For Me</button>
+        <button type="button" class="addon-type-btn" data-type="gift">Send as a Gift &#x1F381;</button>
+      </div>
 
       <form class="addon-modal-form" id="addon-modal-form" novalidate>
 
@@ -188,41 +191,49 @@
           <input type="email" id="modal-buyer-email" class="admin-input" placeholder="you@example.com" required autocomplete="email">
         </div>
 
-        <!-- Shipping intent -->
-        <div class="addon-modal-field">
-          <label class="admin-label">Where should we ship it?</label>
-          <div class="addon-ship-options">
-            <label class="addon-ship-option">
-              <input type="radio" name="shipping-intent" value="direct" id="ship-direct" checked>
-              <div class="addon-ship-option-content">
-                <span class="addon-ship-icon">&#x1F4E6;</span>
-                <div>
-                  <strong class="addon-ship-title">Send directly to <span id="ship-couple-name"></span></strong>
-                  <span class="addon-ship-note">You'll enter their address at checkout</span>
-                </div>
-              </div>
-            </label>
-            <label class="addon-ship-option">
-              <input type="radio" name="shipping-intent" value="in-person">
-              <div class="addon-ship-option-content">
-                <span class="addon-ship-icon">&#x1F381;</span>
-                <div>
-                  <strong class="addon-ship-title">I'll gift it in person</strong>
-                  <span class="addon-ship-note">We'll ship to your address at checkout</span>
-                </div>
-              </div>
-            </label>
-          </div>
-        </div>
+        <!-- Gift-only fields: hidden when "For Me" is selected -->
+        <div id="addon-gift-fields" style="display: none;">
 
-        <!-- Optional gift message -->
-        <div class="addon-modal-field">
-          <label class="admin-label" for="modal-gift-message">
-            Gift Message <span class="addon-optional-label">(optional)</span>
-          </label>
-          <textarea id="modal-gift-message" class="admin-input admin-textarea" rows="2"
-            placeholder="e.g. Wishing you a lifetime of love and laughter! &#x1F942;"></textarea>
-        </div>
+          <!-- Recipient pill -->
+          <div class="addon-modal-recipient" id="addon-modal-recipient"></div>
+
+          <!-- Shipping intent -->
+          <div class="addon-modal-field">
+            <label class="admin-label">Where should we ship it?</label>
+            <div class="addon-ship-options">
+              <label class="addon-ship-option">
+                <input type="radio" name="shipping-intent" value="direct" id="ship-direct" checked>
+                <div class="addon-ship-option-content">
+                  <span class="addon-ship-icon">&#x1F4E6;</span>
+                  <div>
+                    <strong class="addon-ship-title">Send directly to <span id="ship-couple-name"></span></strong>
+                    <span class="addon-ship-note">You'll enter their address at checkout</span>
+                  </div>
+                </div>
+              </label>
+              <label class="addon-ship-option">
+                <input type="radio" name="shipping-intent" value="in-person">
+                <div class="addon-ship-option-content">
+                  <span class="addon-ship-icon">&#x1F381;</span>
+                  <div>
+                    <strong class="addon-ship-title">I'll gift it in person</strong>
+                    <span class="addon-ship-note">We'll ship to your address at checkout</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Gift message -->
+          <div class="addon-modal-field">
+            <label class="admin-label" for="modal-gift-message">
+              Gift Message <span class="addon-optional-label">(optional)</span>
+            </label>
+            <textarea id="modal-gift-message" class="admin-input admin-textarea" rows="2"
+              placeholder="e.g. Wishing you a lifetime of love and laughter! &#x1F942;"></textarea>
+          </div>
+
+        </div><!-- end addon-gift-fields -->
 
         <p class="addon-modal-privacy">&#x1F512; We use this to prepare your order — no spam, ever.</p>
         <button type="submit" class="btn btn-primary btn-large" id="addon-modal-submit" style="width: 100%;">
@@ -354,28 +365,39 @@
         _selectedProduct   = btn.dataset.product;
         _selectedStripeUrl = btn.dataset.stripe;
 
-        // Set selected product label
         addonModalProduct.textContent = 'Adding: ' + _selectedProduct;
 
-        // Show who this is for (the couple from the delivery link)
+        // Populate couple name for use in gift fields
         const coupleName = (_deliveryData && _deliveryData.clientNames) || '';
         const recipientEl = document.getElementById('addon-modal-recipient');
         if (coupleName) {
           recipientEl.innerHTML = '&#x1F49B; For: <strong>' + coupleName + '</strong>';
-          recipientEl.style.display = 'flex';
-        } else {
-          recipientEl.style.display = 'none';
         }
-
-        // Populate the couple name in the shipping option label
         const shipCoupleName = document.getElementById('ship-couple-name');
         if (shipCoupleName) shipCoupleName.textContent = coupleName || 'the couple';
 
-        // Reset the radio to "direct" each time modal opens
+        // Always reset to "For Me" mode when modal opens
+        _purchaseMode = 'self';
+        document.querySelectorAll('.addon-type-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.type === 'self');
+        });
+        document.getElementById('addon-gift-fields').style.display = 'none';
         const directRadio = document.getElementById('ship-direct');
         if (directRadio) directRadio.checked = true;
 
         openAddonModal();
+      });
+    });
+
+    // Toggle between "For Me" and "Send as a Gift"
+    document.querySelectorAll('.addon-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _purchaseMode = btn.dataset.type;
+        document.querySelectorAll('.addon-type-btn').forEach(b => {
+          b.classList.toggle('active', b === btn);
+        });
+        document.getElementById('addon-gift-fields').style.display =
+          _purchaseMode === 'gift' ? 'block' : 'none';
       });
     });
 
@@ -392,8 +414,9 @@
       addonModalError.style.display = 'none';
       addonModalSubmit.textContent = 'Continue to Checkout →';
       addonModalSubmit.disabled = false;
-      _selectedProduct  = null;
+      _selectedProduct   = null;
       _selectedStripeUrl = null;
+      _purchaseMode      = 'self';
     }
 
     addonModalClose.addEventListener('click', closeAddonModal);
@@ -407,11 +430,17 @@
     addonModalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const name         = document.getElementById('modal-buyer-name').value.trim();
-      const email        = document.getElementById('modal-buyer-email').value.trim();
-      const giftMessage  = document.getElementById('modal-gift-message').value.trim();
-      const shippingIntent = document.querySelector('input[name="shipping-intent"]:checked')?.value || 'direct';
-      const shippingLabel  = shippingIntent === 'direct' ? 'Ship directly to couple' : 'Gift in person';
+      const name  = document.getElementById('modal-buyer-name').value.trim();
+      const email = document.getElementById('modal-buyer-email').value.trim();
+
+      // Gift-mode-only fields
+      let giftMessage    = '';
+      let shippingLabel  = 'Self-purchase (ship to buyer)';
+      if (_purchaseMode === 'gift') {
+        giftMessage = document.getElementById('modal-gift-message').value.trim();
+        const shippingIntent = document.querySelector('input[name="shipping-intent"]:checked')?.value || 'direct';
+        shippingLabel = shippingIntent === 'direct' ? 'Ship directly to couple' : 'Gift in person';
+      }
 
       if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         addonModalError.style.display = 'block';
@@ -424,7 +453,7 @@
 
       const clientNames = (_deliveryData && _deliveryData.clientNames) || '';
 
-      // 1. Submit to Netlify Forms (fire-and-forget — never block the user)
+      // 1. Submit to Netlify Forms (fire-and-forget)
       try {
         await fetch('/', {
           method: 'POST',
@@ -447,11 +476,12 @@
       }
 
       // 2. Build Stripe URL with prefilled buyer info
-      // client_reference_id format: "For: [couple] | From: [buyer] | [shipping]"
       try {
         const stripeUrl = new URL(_selectedStripeUrl);
         stripeUrl.searchParams.set('prefilled_email', email);
-        const refId = `For: ${clientNames} | From: ${name} | ${shippingLabel}`;
+        const refId = _purchaseMode === 'gift'
+          ? `For: ${clientNames} | From: ${name} | ${shippingLabel}`
+          : `${clientNames} (own purchase) | ${name}`;
         stripeUrl.searchParams.set('client_reference_id', refId.substring(0, 200));
         window.location.href = stripeUrl.toString();
       } catch (_) {
