@@ -1753,3 +1753,89 @@ p {
     padding: var(--space-xl) var(--space-lg);
   }
 }
+
+/* ============================================
+   GIFTING MODAL COMPONENTS
+   ============================================ */
+
+/* "For: Blake & Connor" recipient pill */
+.addon-modal-recipient {
+  display: none;
+  align-items: center;
+  gap: var(--space-xs);
+  background: rgba(255, 215, 0, 0.07);
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-off-white);
+  line-height: 1.4;
+}
+
+.addon-modal-recipient strong {
+  color: var(--color-gold);
+}
+
+/* Shipping intent option cards */
+.addon-ship-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.addon-ship-option {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.addon-ship-option:has(input:checked) {
+  border-color: var(--color-gold);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+.addon-ship-option input[type="radio"] {
+  display: none;
+}
+
+.addon-ship-option-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.addon-ship-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.addon-ship-title {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 2px;
+}
+
+.addon-ship-note {
+  display: block;
+  font-size: 11px;
+  color: var(--color-off-white);
+  opacity: 0.6;
+}
+
+/* "(optional)" label styling */
+.addon-optional-label {
+  font-weight: var(--font-weight-normal);
+  opacity: 0.5;
+  font-size: var(--font-size-xs);
+  margin-left: 4px;
+}

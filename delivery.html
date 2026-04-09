@@ -23,6 +23,8 @@
     <input name="client-names" type="text">
     <input name="event-type" type="text">
     <input name="event-date" type="text">
+    <input name="shipping-intent" type="text">
+    <input name="gift-message" type="text">
   </form>
 
   <!-- Simplified Navigation -->
@@ -161,22 +163,68 @@
   <div class="addon-modal-overlay" id="addon-modal-overlay">
     <div class="addon-modal" role="dialog" aria-modal="true" aria-labelledby="addon-modal-title">
       <button class="addon-modal-close" id="addon-modal-close" aria-label="Close modal">&#x2715;</button>
+
       <div class="addon-modal-header">
-        <p class="addons-eyebrow" style="margin-bottom: var(--space-xs);">Almost there! 🎉</p>
-        <h3 class="addon-modal-title" id="addon-modal-title">Just one quick step</h3>
-        <p class="addon-modal-subtitle">Enter your details and we'll take you straight to checkout.</p>
+        <p class="addons-eyebrow" style="margin-bottom: var(--space-xs);">&#x2728; Almost there!</p>
+        <h3 class="addon-modal-title" id="addon-modal-title">Complete Your Order</h3>
+        <p class="addon-modal-subtitle">A couple quick details before we send you to checkout.</p>
       </div>
+
+      <!-- Selected product -->
       <div class="addon-modal-product" id="addon-modal-product"></div>
+
+      <!-- Recipient (who this is for) -->
+      <div class="addon-modal-recipient" id="addon-modal-recipient"></div>
+
       <form class="addon-modal-form" id="addon-modal-form" novalidate>
+
+        <!-- Buyer info -->
         <div class="addon-modal-field">
           <label class="admin-label" for="modal-buyer-name">Your Name *</label>
-          <input type="text" id="modal-buyer-name" class="admin-input" placeholder="e.g. Blake &amp; Connor" required autocomplete="name">
+          <input type="text" id="modal-buyer-name" class="admin-input" placeholder="e.g. Sarah Miller" required autocomplete="name">
         </div>
         <div class="addon-modal-field">
           <label class="admin-label" for="modal-buyer-email">Your Email *</label>
           <input type="email" id="modal-buyer-email" class="admin-input" placeholder="you@example.com" required autocomplete="email">
         </div>
-        <p class="addon-modal-privacy">&#x1F512; We use this to confirm your order — no spam, ever.</p>
+
+        <!-- Shipping intent -->
+        <div class="addon-modal-field">
+          <label class="admin-label">Where should we ship it?</label>
+          <div class="addon-ship-options">
+            <label class="addon-ship-option">
+              <input type="radio" name="shipping-intent" value="direct" id="ship-direct" checked>
+              <div class="addon-ship-option-content">
+                <span class="addon-ship-icon">&#x1F4E6;</span>
+                <div>
+                  <strong class="addon-ship-title">Send directly to <span id="ship-couple-name"></span></strong>
+                  <span class="addon-ship-note">You'll enter their address at checkout</span>
+                </div>
+              </div>
+            </label>
+            <label class="addon-ship-option">
+              <input type="radio" name="shipping-intent" value="in-person">
+              <div class="addon-ship-option-content">
+                <span class="addon-ship-icon">&#x1F381;</span>
+                <div>
+                  <strong class="addon-ship-title">I'll gift it in person</strong>
+                  <span class="addon-ship-note">We'll ship to your address at checkout</span>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Optional gift message -->
+        <div class="addon-modal-field">
+          <label class="admin-label" for="modal-gift-message">
+            Gift Message <span class="addon-optional-label">(optional)</span>
+          </label>
+          <textarea id="modal-gift-message" class="admin-input admin-textarea" rows="2"
+            placeholder="e.g. Wishing you a lifetime of love and laughter! &#x1F942;"></textarea>
+        </div>
+
+        <p class="addon-modal-privacy">&#x1F512; We use this to prepare your order — no spam, ever.</p>
         <button type="submit" class="btn btn-primary btn-large" id="addon-modal-submit" style="width: 100%;">
           Continue to Checkout &rarr;
         </button>
@@ -303,15 +351,29 @@
     // Open modal when an add-on button is clicked
     document.querySelectorAll('.addon-cta-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        _selectedProduct  = btn.dataset.product;
+        _selectedProduct   = btn.dataset.product;
         _selectedStripeUrl = btn.dataset.stripe;
 
+        // Set selected product label
         addonModalProduct.textContent = 'Adding: ' + _selectedProduct;
 
-        // Pre-fill buyer name from delivery data (client can edit it)
-        if (_deliveryData && _deliveryData.clientNames) {
-          document.getElementById('modal-buyer-name').value = _deliveryData.clientNames;
+        // Show who this is for (the couple from the delivery link)
+        const coupleName = (_deliveryData && _deliveryData.clientNames) || '';
+        const recipientEl = document.getElementById('addon-modal-recipient');
+        if (coupleName) {
+          recipientEl.innerHTML = '&#x1F49B; For: <strong>' + coupleName + '</strong>';
+          recipientEl.style.display = 'flex';
+        } else {
+          recipientEl.style.display = 'none';
         }
+
+        // Populate the couple name in the shipping option label
+        const shipCoupleName = document.getElementById('ship-couple-name');
+        if (shipCoupleName) shipCoupleName.textContent = coupleName || 'the couple';
+
+        // Reset the radio to "direct" each time modal opens
+        const directRadio = document.getElementById('ship-direct');
+        if (directRadio) directRadio.checked = true;
 
         openAddonModal();
       });
@@ -345,8 +407,11 @@
     addonModalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const name  = document.getElementById('modal-buyer-name').value.trim();
-      const email = document.getElementById('modal-buyer-email').value.trim();
+      const name         = document.getElementById('modal-buyer-name').value.trim();
+      const email        = document.getElementById('modal-buyer-email').value.trim();
+      const giftMessage  = document.getElementById('modal-gift-message').value.trim();
+      const shippingIntent = document.querySelector('input[name="shipping-intent"]:checked')?.value || 'direct';
+      const shippingLabel  = shippingIntent === 'direct' ? 'Ship directly to couple' : 'Gift in person';
 
       if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         addonModalError.style.display = 'block';
@@ -357,20 +422,24 @@
       addonModalSubmit.textContent = 'Redirecting to Checkout...';
       addonModalSubmit.disabled = true;
 
+      const clientNames = (_deliveryData && _deliveryData.clientNames) || '';
+
       // 1. Submit to Netlify Forms (fire-and-forget — never block the user)
       try {
         await fetch('/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
-            'form-name':    'addon-purchase',
-            'subject':      'New Add-On Purchase — Toasted',
-            'buyer-name':   name,
-            'email':        email,
-            'product':      _selectedProduct || '',
-            'client-names': (_deliveryData && _deliveryData.clientNames) || '',
-            'event-type':   (_deliveryData && _deliveryData.eventType)   || '',
-            'event-date':   (_deliveryData && _deliveryData.eventDate)   || ''
+            'form-name':       'addon-purchase',
+            'subject':         'New Add-On Purchase — Toasted',
+            'buyer-name':      name,
+            'email':           email,
+            'product':         _selectedProduct || '',
+            'client-names':    clientNames,
+            'event-type':      (_deliveryData && _deliveryData.eventType) || '',
+            'event-date':      (_deliveryData && _deliveryData.eventDate) || '',
+            'shipping-intent': shippingLabel,
+            'gift-message':    giftMessage
           }).toString()
         });
       } catch (err) {
@@ -378,10 +447,12 @@
       }
 
       // 2. Build Stripe URL with prefilled buyer info
+      // client_reference_id format: "For: [couple] | From: [buyer] | [shipping]"
       try {
         const stripeUrl = new URL(_selectedStripeUrl);
         stripeUrl.searchParams.set('prefilled_email', email);
-        stripeUrl.searchParams.set('client_reference_id', name.substring(0, 200));
+        const refId = `For: ${clientNames} | From: ${name} | ${shippingLabel}`;
+        stripeUrl.searchParams.set('client_reference_id', refId.substring(0, 200));
         window.location.href = stripeUrl.toString();
       } catch (_) {
         window.location.href = _selectedStripeUrl;
