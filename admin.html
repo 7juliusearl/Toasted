@@ -150,8 +150,8 @@
         authGate.style.display = 'none';
         dashboard.style.display = 'block';
         authPassword.value = '';
-        await migrateLocalHistory();
-        await loadHistory();
+        const migratedHistory = await migrateLocalHistory();
+        await loadHistory(migratedHistory);
       } catch (error) {
         authError.style.display = 'block';
         authError.textContent = error.message === 'Incorrect password'
@@ -337,7 +337,7 @@
       for (const item of localHistory) {
         await apiRequest('POST', item);
       }
-      if (localHistory.length) localStorage.removeItem(HISTORY_KEY);
+      return localHistory;
     }
 
     async function saveToHistory(data, url) {
@@ -361,7 +361,7 @@
       await loadHistory();
     }
 
-    async function loadHistory() {
+    async function loadHistory(pendingMigration = []) {
       const listEl = document.getElementById('history-list');
       const emptyEl = document.getElementById('history-empty');
       const countEl = document.getElementById('history-count');
@@ -370,8 +370,24 @@
       emptyEl.textContent = 'Loading deliveries…';
 
       try {
-        const result = await apiRequest();
-        historyCache = result.deliveries || [];
+        const pendingUrls = new Set(pendingMigration.map(item => item.url));
+        const attempts = pendingUrls.size ? 8 : 1;
+        for (let attempt = 0; attempt < attempts; attempt += 1) {
+          const result = await apiRequest();
+          historyCache = result.deliveries || [];
+          const allMigrated = [...pendingUrls].every(url =>
+            historyCache.some(item => item.url === url)
+          );
+          if (allMigrated) {
+            if (pendingUrls.size) localStorage.removeItem(HISTORY_KEY);
+            break;
+          }
+          emptyEl.textContent = 'Syncing your existing deliveries…';
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+        if ([...pendingUrls].some(url => !historyCache.some(item => item.url === url))) {
+          throw new Error('Your existing deliveries are still syncing. They remain safely stored in this browser; refresh shortly to try again.');
+        }
       } catch (error) {
         emptyEl.textContent = error.message;
         countEl.textContent = '0';
