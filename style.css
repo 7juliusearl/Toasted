@@ -735,6 +735,208 @@ p {
 }
 
 /* ============================================
+   SPIRITMADE VISUALS FEATURE
+   ============================================ */
+.spiritmade-feature {
+  --spirit-cream: #f3eadf;
+  --spirit-rust: #b65f3d;
+  position: relative;
+  overflow: hidden;
+  padding: clamp(4rem, 8vw, 8rem) 0;
+  background:
+    radial-gradient(circle at 85% 25%, rgba(182, 95, 61, 0.16), transparent 30%),
+    linear-gradient(135deg, #111 0%, #181513 55%, #211713 100%);
+}
+
+.spiritmade-accent {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), #e8b865 35%, var(--spirit-rust) 72%, transparent);
+}
+
+.spiritmade-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: center;
+}
+
+.spiritmade-visual {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  position: relative;
+  min-height: clamp(480px, 58vw, 670px);
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+  isolation: isolate;
+}
+
+.spiritmade-visual::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  z-index: 3;
+  border: 1px solid rgba(243, 234, 223, 0.42);
+  pointer-events: none;
+}
+
+.spiritmade-visual img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+  object-position: 48% center;
+  transform: scale(1.01);
+  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1), filter 500ms ease;
+}
+
+.spiritmade-image-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 35%, rgba(15, 9, 7, 0.78) 100%);
+  pointer-events: none;
+}
+
+.spiritmade-visual:hover img {
+  transform: scale(1.055);
+  filter: saturate(1.06);
+}
+
+.spiritmade-cursor {
+  position: absolute;
+  left: var(--mouse-x);
+  top: var(--mouse-y);
+  z-index: 4;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  background: rgba(20, 13, 10, 0.64);
+  color: var(--spirit-cream);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 200ms ease, transform 300ms ease;
+  backdrop-filter: blur(6px);
+}
+
+.spiritmade-visual:hover .spiritmade-cursor {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.spiritmade-copy {
+  max-width: 620px;
+}
+
+.spiritmade-eyebrow {
+  margin-bottom: 1.75rem;
+  color: #d9a083;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.spiritmade-logo {
+  width: clamp(200px, 24vw, 290px);
+  margin: 0 0 2.25rem;
+}
+
+.spiritmade-copy h2 {
+  max-width: 600px;
+  margin-bottom: 1.6rem;
+  color: var(--spirit-cream);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.6rem, 5vw, 5rem);
+  font-weight: 400;
+  line-height: 0.99;
+  letter-spacing: -0.035em;
+}
+
+.spiritmade-description {
+  max-width: 580px;
+  margin-bottom: 1.4rem;
+  color: rgba(243, 234, 223, 0.78);
+  font-size: clamp(1rem, 1.3vw, 1.16rem);
+  line-height: 1.8;
+}
+
+.spiritmade-locations {
+  margin-bottom: 2.25rem;
+  color: #d9a083;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spiritmade-locations span {
+  padding: 0 0.35rem;
+}
+
+.spiritmade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+
+.spiritmade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 54px;
+  padding: 0.9rem 1.35rem;
+  border: 1px solid var(--spirit-cream);
+  color: var(--spirit-cream);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: color 220ms ease, background 220ms ease, border-color 220ms ease, transform 220ms ease;
+}
+
+.spiritmade-btn-primary {
+  background: var(--spirit-cream);
+  color: #17120f;
+}
+
+.spiritmade-btn:hover {
+  transform: translateY(-3px);
+}
+
+.spiritmade-btn-primary:hover {
+  background: #fff;
+  border-color: #fff;
+}
+
+.spiritmade-btn-secondary:hover {
+  background: rgba(243, 234, 223, 0.1);
+}
+
+.spiritmade-inquire {
+  display: inline-block;
+  padding-bottom: 0.18rem;
+  border-bottom: 1px solid rgba(217, 160, 131, 0.45);
+  color: #d9a083;
+  font-size: 0.84rem;
+  transition: border-color 200ms ease, color 200ms ease;
+}
+
+.spiritmade-inquire:hover {
+  border-color: var(--spirit-cream);
+  color: var(--spirit-cream);
+}
+
+/* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 1024px) {
@@ -746,6 +948,15 @@ p {
   
   .grid-3 {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .spiritmade-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+    gap: 3rem;
+  }
+
+  .spiritmade-visual {
+    min-height: 540px;
   }
 }
 
@@ -800,6 +1011,53 @@ p {
   .testimonials-grid {
     grid-template-columns: 1fr;
   }
+
+  .spiritmade-feature {
+    padding-top: 0;
+  }
+
+  .spiritmade-feature .container {
+    padding: 0;
+  }
+
+  .spiritmade-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .spiritmade-visual {
+    min-height: min(112vw, 650px);
+    border-radius: 0;
+  }
+
+  .spiritmade-visual img {
+    object-position: center;
+  }
+
+  .spiritmade-cursor {
+    display: none;
+  }
+
+  .spiritmade-copy {
+    max-width: none;
+    padding: 3.5rem var(--space-lg) 0;
+  }
+
+  .spiritmade-logo {
+    width: 210px;
+  }
+
+  .spiritmade-copy h2 {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+  }
+
+  .spiritmade-actions {
+    flex-direction: column;
+  }
+
+  .spiritmade-btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -815,6 +1073,24 @@ p {
   
   .section {
     padding: var(--space-3xl) 0;
+  }
+
+  .spiritmade-copy {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spiritmade-visual img,
+  .spiritmade-cursor,
+  .spiritmade-btn {
+    transition: none;
+  }
+
+  .spiritmade-visual:hover img,
+  .spiritmade-btn:hover {
+    transform: none;
   }
 }
 

@@ -156,6 +156,19 @@ function animateGridItems() {
 animateGridItems();
 
 // ============================================
+// SPIRITMADE FEATURE POINTER RESPONSE
+// ============================================
+const spiritmadeVisual = document.querySelector('.spiritmade-visual');
+
+if (spiritmadeVisual && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  spiritmadeVisual.addEventListener('pointermove', (event) => {
+    const bounds = spiritmadeVisual.getBoundingClientRect();
+    spiritmadeVisual.style.setProperty('--mouse-x', `${event.clientX - bounds.left}px`);
+    spiritmadeVisual.style.setProperty('--mouse-y', `${event.clientY - bounds.top}px`);
+  });
+}
+
+// ============================================
 // BUTTON HOVER EFFECTS
 // ============================================
 const buttons = document.querySelectorAll('.btn');
@@ -312,4 +325,3 @@ window.addEventListener('message', function(e) {
 console.log('%cTOASTED VGB 🎥', 'color: #FFD700; font-size: 24px; font-weight: bold;');
 console.log('%cThe Video Guestbook Your Wedding Guests Will Actually Love!', 'color: #FFF; font-size: 14px;');
 console.log('%cBuilt with ❤️ for unforgettable memories', 'color: #FFD700; font-size: 12px;');
-
