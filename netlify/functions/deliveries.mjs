@@ -1,7 +1,7 @@
 import { getStore } from '@netlify/blobs';
 
 const STORE_NAME = 'toasted-deliveries';
-const HISTORY_KEY = 'history';
+const DELIVERY_PREFIX = 'deliveries/';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,8 +19,18 @@ function authorized(request) {
   return Boolean(expected && supplied && supplied === expected);
 }
 
+function deliveryKey(id) {
+  return `${DELIVERY_PREFIX}${id}`;
+}
+
 async function readHistory(store) {
-  return (await store.get(HISTORY_KEY, { type: 'json' })) || [];
+  const { blobs } = await store.list({ prefix: DELIVERY_PREFIX });
+  const deliveries = await Promise.all(
+    blobs.map(blob => store.get(blob.key, { type: 'json' }))
+  );
+  return deliveries
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 export default async (request) => {
@@ -39,41 +49,36 @@ export default async (request) => {
   }
 
   const store = getStore(STORE_NAME);
-  const history = await readHistory(store);
-
   if (request.method === 'POST') {
     const item = {
       ...payload,
       id: payload.id || crypto.randomUUID(),
       createdAt: payload.createdAt || new Date().toISOString()
     };
-    const existingIndex = history.findIndex(entry => entry.id === item.id || entry.url === item.url);
-    if (existingIndex >= 0) history[existingIndex] = { ...history[existingIndex], ...item };
-    else history.unshift(item);
-    await store.setJSON(HISTORY_KEY, history);
+    await store.setJSON(deliveryKey(item.id), item);
     return json({ delivery: item }, 201);
   }
 
   if (request.method === 'PUT') {
     if (!payload.id) return json({ error: 'Delivery ID is required' }, 400);
-    const index = history.findIndex(entry => entry.id === payload.id);
-    if (index < 0) return json({ error: 'Delivery not found' }, 404);
-    history[index] = {
-      ...history[index],
+    const existing = await store.get(deliveryKey(payload.id), { type: 'json' });
+    if (!existing) return json({ error: 'Delivery not found' }, 404);
+    const item = {
+      ...existing,
       ...payload,
-      id: history[index].id,
-      createdAt: history[index].createdAt,
+      id: existing.id,
+      createdAt: existing.createdAt,
       updatedAt: new Date().toISOString()
     };
-    await store.setJSON(HISTORY_KEY, history);
-    return json({ delivery: history[index] });
+    await store.setJSON(deliveryKey(item.id), item);
+    return json({ delivery: item });
   }
 
   if (request.method === 'DELETE') {
     if (!payload.id) return json({ error: 'Delivery ID is required' }, 400);
-    const nextHistory = history.filter(entry => entry.id !== payload.id);
-    if (nextHistory.length === history.length) return json({ error: 'Delivery not found' }, 404);
-    await store.setJSON(HISTORY_KEY, nextHistory);
+    const existing = await store.get(deliveryKey(payload.id), { type: 'json' });
+    if (!existing) return json({ error: 'Delivery not found' }, 404);
+    await store.delete(deliveryKey(payload.id));
     return json({ ok: true });
   }
 
