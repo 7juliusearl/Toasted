@@ -252,7 +252,7 @@
     // Exposed at module scope so the add-on modal can reference client info
     let _deliveryData = null;
 
-    (function () {
+    (async function () {
       const loadingEl = document.getElementById('delivery-loading');
       const errorEl = document.getElementById('delivery-error');
       const contentEl = document.getElementById('delivery-content');
@@ -288,17 +288,25 @@
       }
 
       try {
-        const hash = window.location.hash.substring(1);
-        if (!hash) { showError(); return; }
-
         let data;
-        const decompressed = LZString.decompressFromEncodedURIComponent(hash);
-        if (decompressed) {
-          const raw = JSON.parse(decompressed);
-          data = raw.c ? { clientNames: raw.c, eventType: raw.t, eventDate: raw.d, dropboxUrl: raw.u, message: raw.m } : raw;
+        const slug = new URLSearchParams(window.location.search).get('slug');
+        if (slug) {
+          const response = await fetch(`/.netlify/functions/deliveries?slug=${encodeURIComponent(slug)}`);
+          if (!response.ok) { showError(); return; }
+          const result = await response.json();
+          data = result.delivery;
         } else {
-          const decoded = atob(hash);
-          data = JSON.parse(decoded);
+          // Backward compatibility for delivery links that contain encoded data.
+          const hash = window.location.hash.substring(1);
+          if (!hash) { showError(); return; }
+          const decompressed = LZString.decompressFromEncodedURIComponent(hash);
+          if (decompressed) {
+            const raw = JSON.parse(decompressed);
+            data = raw.c ? { clientNames: raw.c, eventType: raw.t, eventDate: raw.d, dropboxUrl: raw.u, message: raw.m } : raw;
+          } else {
+            const decoded = atob(hash);
+            data = JSON.parse(decoded);
+          }
         }
 
         if (!data.clientNames || !data.dropboxUrl) { showError(); return; }

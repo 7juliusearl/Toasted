@@ -4,3 +4,8 @@
 
 [functions]
   node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/gallery/:slug"
+  to = "/delivery.html?slug=:slug"
+  status = 200

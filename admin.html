@@ -204,13 +204,14 @@
 
       if (!data.clientNames || !data.dropboxUrl) return;
 
-      // Compress data for shorter URL
-      const compact = { c: data.clientNames, t: data.eventType, d: data.eventDate, u: data.dropboxUrl, m: data.message };
-      const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(compact));
-      const path = window.location.pathname;
-      const deliveryPath = path.endsWith('admin.html') ? path.replace('admin.html', 'delivery.html') : path.replace(/\/admin\/?$/, '/delivery');
-      const baseUrl = window.location.origin + deliveryPath;
-      const deliveryUrl = `${baseUrl}#${compressed}`;
+      let result;
+      if (editingId !== null) {
+        result = await updateHistory(editingId, data);
+        exitEditMode();
+      } else {
+        result = await saveToHistory(data);
+      }
+      const deliveryUrl = galleryUrl(result.delivery);
 
       // Show generated link
       generatedLink.value = deliveryUrl;
@@ -218,13 +219,6 @@
       linkOutput.style.display = 'block';
       form.style.display = 'none';
 
-      // Save or update history
-      if (editingId !== null) {
-        await updateHistory(editingId, data, deliveryUrl);
-        exitEditMode();
-      } else {
-        await saveToHistory(data, deliveryUrl);
-      }
       await loadHistory();
     });
 
@@ -340,19 +334,23 @@
       return localHistory;
     }
 
-    async function saveToHistory(data, url) {
-      await apiRequest('POST', {
+    function galleryUrl(item) {
+      if (item.slug) return `${window.location.origin}/gallery/${encodeURIComponent(item.slug)}`;
+      if (item.url && item.url.startsWith('/')) return window.location.origin + item.url;
+      return item.url || '';
+    }
+
+    async function saveToHistory(data) {
+      return apiRequest('POST', {
         ...data,
-        url,
         createdAt: new Date().toISOString()
       });
     }
 
-    async function updateHistory(id, data, url) {
-      await apiRequest('PUT', {
+    async function updateHistory(id, data) {
+      return apiRequest('PUT', {
         id,
-        ...data,
-        url
+        ...data
       });
     }
 
@@ -376,7 +374,7 @@
           const result = await apiRequest();
           historyCache = result.deliveries || [];
           const allMigrated = [...pendingUrls].every(url =>
-            historyCache.some(item => item.url === url)
+            historyCache.some(item => item.url === url || item.legacyUrl === url)
           );
           if (allMigrated) {
             if (pendingUrls.size) localStorage.removeItem(HISTORY_KEY);
@@ -385,7 +383,7 @@
           emptyEl.textContent = 'Syncing your existing deliveries…';
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
-        if ([...pendingUrls].some(url => !historyCache.some(item => item.url === url))) {
+        if ([...pendingUrls].some(url => !historyCache.some(item => item.url === url || item.legacyUrl === url))) {
           throw new Error('Your existing deliveries are still syncing. They remain safely stored in this browser; refresh shortly to try again.');
         }
       } catch (error) {
@@ -410,6 +408,7 @@
       historyCache.forEach((item) => {
         const div = document.createElement('div');
         div.className = 'admin-history-item';
+        const itemUrl = galleryUrl(item);
 
         const createdDate = new Date(item.createdAt).toLocaleDateString('en-US', {
           month: 'short', day: 'numeric', year: 'numeric'
@@ -425,8 +424,8 @@
           </div>
           <div class="admin-history-actions">
             <button class="btn btn-small btn-secondary admin-edit-btn" data-id="${escapeAttr(item.id)}">Edit</button>
-            <button class="btn btn-small btn-primary admin-copy-btn" data-url="${escapeAttr(item.url)}">Copy Link</button>
-            <a href="${escapeAttr(item.url)}" target="_blank" class="btn btn-small btn-secondary">Preview</a>
+            <button class="btn btn-small btn-primary admin-copy-btn" data-url="${escapeAttr(itemUrl)}">Copy Link</button>
+            <a href="${escapeAttr(itemUrl)}" target="_blank" class="btn btn-small btn-secondary">Preview</a>
             <button class="btn btn-small admin-delete-btn" data-id="${escapeAttr(item.id)}">✕</button>
           </div>
         `;
