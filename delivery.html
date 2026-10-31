@@ -7,7 +7,7 @@
   <meta name="description" content="Your Toasted Video Guestbook delivery — watch and download your highlight reel.">
   <meta name="robots" content="noindex, nofollow">
   <title>Your Video is Ready — TOASTED</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </head>
 
@@ -30,8 +30,8 @@
   <!-- Simplified Navigation -->
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
-      <a href="index.html" class="navbar-logo">
-        <img src="images/logo.png" alt="TOASTED" style="height: 40px;">
+      <a href="/index.html" class="navbar-logo">
+        <img src="/images/logo.png" alt="TOASTED" style="height: 40px;">
       </a>
     </div>
   </nav>
@@ -51,7 +51,7 @@
         <div class="delivery-error-icon">🎬</div>
         <h2>Link Not Found</h2>
         <p class="text-large">This delivery link appears to be invalid or has expired.</p>
-        <a href="index.html" class="btn btn-primary" style="margin-top: var(--space-lg);">Visit Toasted</a>
+        <a href="/index.html" class="btn btn-primary" style="margin-top: var(--space-lg);">Visit Toasted</a>
       </div>
     </div>
 
@@ -98,7 +98,7 @@
             <!-- Physical Video Book -->
             <div class="addon-card">
               <div class="addon-card-img-wrap">
-                <img src="images/VGB Book.png" alt="Physical Video Book" class="addon-card-img">
+                <img src="/images/VGB Book.png" alt="Physical Video Book" class="addon-card-img">
                 <span class="addon-badge">Most Popular</span>
               </div>
               <div class="addon-card-body">
@@ -117,7 +117,7 @@
             <!-- Custom USB Drive -->
             <div class="addon-card">
               <div class="addon-card-img-wrap">
-                <img src="images/usb.jpg" alt="Custom USB Drive" class="addon-card-img">
+                <img src="/images/usb.jpg" alt="Custom USB Drive" class="addon-card-img">
               </div>
               <div class="addon-card-body">
                 <h3 class="addon-name">Custom USB Drive</h3>
@@ -289,7 +289,10 @@
 
       try {
         let data;
-        const slug = new URLSearchParams(window.location.search).get('slug');
+        const galleryPath = window.location.pathname.match(/^\/gallery\/([^/]+)\/?$/);
+        const slug = galleryPath
+          ? decodeURIComponent(galleryPath[1])
+          : new URLSearchParams(window.location.search).get('slug');
         if (slug) {
           const response = await fetch(`/.netlify/functions/deliveries?slug=${encodeURIComponent(slug)}`);
           if (!response.ok) { showError(); return; }
